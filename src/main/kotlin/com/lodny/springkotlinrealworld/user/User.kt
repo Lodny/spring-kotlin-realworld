@@ -2,33 +2,42 @@ package com.lodny.springkotlinrealworld.user
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonRootName
+import com.lodny.springkotlinrealworld.article.Article
+import java.util.*
 import javax.persistence.*
+import javax.validation.constraints.NotEmpty
 
 @Entity
 @JsonRootName("user")
-data class User(@Column(unique = true, nullable = false) var username: String,
-                @Column(unique = true, nullable = false) var email: String,
-                @JsonIgnore var password: String) {
+data class User(@Column(unique = true, nullable = false) var username: String = "",
+                @Column(unique = true, nullable = false) var email: String = "",
+                @JsonIgnore @NotEmpty var password: String = "",
+                @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long = 0,
+                var bio: String = "",
+                var image: String = "https://static.productionready.io/images/smiley-cyrus.jpg",
+//                var createdAt: Date = Date(),
+//                var updatedAt: Date = Date(),
+                @ManyToMany
+                @JsonIgnore
+                var follows: MutableList<User> = mutableListOf(),
+//                @OneToMany(fetch = FetchType.LAZY)
+                @OneToMany
+                @JsonIgnore
+                var favorites: MutableList<Article> =  mutableListOf(),
+                var token: String = ""
+                ) {
+    // *** The toString function below have to be, because data class and following recursive
+    override fun toString(): String = "User($email, $username, $id)"
 
-    @Id @GeneratedValue(strategy = GenerationType.AUTO)
-    var id: Long = 0
-
-    var bio = ""
-    var image = ""
-    var createdAt = ""
-    var updatedAt = ""
-
-    @JsonIgnore
-    @OneToMany
-    var following = mutableListOf<User>()
-
-//    @JsonIgnore
-//    @OneToMany
-//    var favorites =  mutableListOf<String>()
-//    var favorites: MutableList<String> =  mutableListOf()
-
-    init {
+    override fun equals(other: Any?): Boolean {
+        val user = other as User
+        return id == user.id && username == user.username && email == user.email
     }
 
-    override fun toString() = "User($username, $email)"
+    inner class User2Json(loginUser: User?) {
+        val username = this@User.username
+        val bio = this@User.bio
+        val image = this@User.image
+        val following = loginUser?.follows?.contains(this@User) ?: false
+    }
 }
